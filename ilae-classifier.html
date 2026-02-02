@@ -1,0 +1,2082 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#1a1a2e">
+    <title>ILAE 2025 Seizure Classification</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5a6fd6;
+            --secondary: #764ba2;
+            --bg-dark: #1a1a2e;
+            --bg-card: #16213e;
+            --text: #eee;
+            --text-muted: #888;
+            --border: #2a2a4a;
+            --success: #27ae60;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --info: #3498db;
+            --purple: #9b59b6;
+            --safe-bottom: env(safe-area-inset-bottom, 0px);
+            --safe-top: env(safe-area-inset-top, 0px);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg-dark);
+            color: var(--text);
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+            overflow-x: hidden;
+            padding-top: var(--safe-top);
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            padding: 16px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* Home Button */
+        .home-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            background: rgba(255,255,255,0.15);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            text-decoration: none;
+            margin-right: 12px;
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+
+        .home-btn:hover, .home-btn:active {
+            background: rgba(255,255,255,0.25);
+        }
+
+        .header h1 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        .header p {
+            font-size: 0.75rem;
+            opacity: 0.9;
+            margin-top: 2px;
+        }
+
+        /* Hamburger Menu Button */
+        .menu-btn {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 44px;
+            height: 44px;
+            background: rgba(255,255,255,0.15);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            flex-shrink: 0;
+            margin-left: 12px;
+            transition: background 0.2s;
+        }
+
+        .menu-btn:hover, .menu-btn:active {
+            background: rgba(255,255,255,0.25);
+        }
+
+        .menu-btn span {
+            display: block;
+            width: 22px;
+            height: 2px;
+            background: white;
+            margin: 3px 0;
+            border-radius: 2px;
+            transition: all 0.3s;
+        }
+
+        .menu-btn.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+
+        .menu-btn.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .menu-btn.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(6px, -6px);
+        }
+
+        /* Navigation Overlay */
+        .nav-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 998;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        .nav-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Sidebar Navigation */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            right: -300px;
+            width: 280px;
+            max-width: 85vw;
+            height: 100%;
+            background: var(--bg-card);
+            z-index: 999;
+            overflow-y: auto;
+            transition: right 0.3s ease;
+            padding-top: 70px;
+            padding-bottom: calc(20px + var(--safe-bottom));
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .sidebar.active {
+            right: 0;
+        }
+
+        .sidebar h3 {
+            padding: 15px 20px 10px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+            font-size: 0.95rem;
+            min-height: 48px;
+        }
+
+        .nav-item:hover, .nav-item:active {
+            background: rgba(102, 126, 234, 0.1);
+            border-left-color: var(--primary);
+        }
+
+        .nav-item.active {
+            background: rgba(102, 126, 234, 0.2);
+            border-left-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .nav-item .number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            background: var(--border);
+            border-radius: 50%;
+            font-size: 0.8rem;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+
+        .nav-item.active .number {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Main Content - FULL WIDTH */
+        .main-content {
+            padding: 16px;
+            padding-bottom: calc(80px + var(--safe-bottom));
+            width: 100%;
+        }
+
+        .diagram-section {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .diagram-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .diagram-header {
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .diagram-header h2 {
+            font-size: 1.25rem;
+            margin-bottom: 6px;
+            color: #fff;
+            line-height: 1.4;
+        }
+
+        .diagram-header p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        /* Diagram Container - FIT TO SCREEN BY DEFAULT */
+        .diagram-container {
+            background: #fff;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            position: relative;
+            min-height: 200px;
+            overflow: hidden;
+        }
+
+        .diagram-wrapper {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            transition: transform 0.2s ease;
+        }
+
+        .mermaid {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* KEY CHANGE: SVGs scale to fit container width by default */
+        .mermaid svg {
+            max-width: 100% !important;
+            height: auto !important;
+            display: block;
+        }
+
+        /* When zoomed, allow overflow and scrolling */
+        .diagram-container.zoomed {
+            overflow: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .diagram-container.zoomed .mermaid svg {
+            max-width: none !important;
+        }
+
+        /* Zoom Controls */
+        .zoom-controls {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .zoom-btn {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 8px;
+            background: var(--bg-card);
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            transition: background 0.2s;
+        }
+
+        .zoom-btn:hover, .zoom-btn:active {
+            background: var(--primary);
+        }
+
+        .zoom-btn.active {
+            background: var(--primary);
+        }
+
+        /* Fit button */
+        .fit-btn {
+            font-size: 0.7rem;
+            font-weight: bold;
+            width: auto;
+            padding: 0 12px;
+        }
+
+        /* Scroll Hint - only show when zoomed */
+        .scroll-hint {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 8px;
+            margin-top: 12px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            gap: 8px;
+        }
+
+        .diagram-container.zoomed + .scroll-hint {
+            display: flex;
+        }
+
+        .scroll-hint svg {
+            width: 16px;
+            height: 16px;
+            animation: swipe 1.5s infinite;
+        }
+
+        @keyframes swipe {
+            0%, 100% { transform: translateX(0); opacity: 1; }
+            50% { transform: translateX(5px); opacity: 0.5; }
+        }
+
+        /* Info Boxes */
+        .info-box {
+            background: rgba(102, 126, 234, 0.1);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-top: 16px;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        .info-box strong {
+            color: var(--primary);
+        }
+
+        .correction-box {
+            background: rgba(231, 76, 60, 0.1);
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            border-radius: 10px;
+            padding: 14px 16px;
+            margin-top: 16px;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+
+        .correction-box strong {
+            color: var(--danger);
+        }
+
+        /* Table Styles */
+        .table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-top: 16px;
+            border-radius: 10px;
+            background: var(--bg-card);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            min-width: 600px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background: var(--bg-dark);
+            font-weight: 600;
+            color: var(--primary);
+            position: sticky;
+            top: 0;
+        }
+
+        tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .tag-auto {
+            background: rgba(231, 76, 60, 0.2);
+            color: var(--danger);
+        }
+
+        .tag-ask {
+            background: rgba(52, 152, 219, 0.2);
+            color: var(--info);
+        }
+
+        /* Bottom Navigation (Mobile) */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-around;
+            padding: 8px 12px;
+            padding-bottom: calc(8px + var(--safe-bottom));
+            z-index: 100;
+        }
+
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 6px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-width: 60px;
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        .bottom-nav-item:active, .bottom-nav-item.active {
+            background: rgba(102, 126, 234, 0.2);
+            color: var(--primary);
+        }
+
+        .bottom-nav-item .icon {
+            font-size: 1.2rem;
+            margin-bottom: 2px;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 20px 16px;
+            background: var(--bg-card);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: calc(60px + var(--safe-bottom));
+        }
+
+        .footer a {
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        /* Desktop Styles - FULL WIDTH */
+        @media (min-width: 900px) {
+            .header h1 {
+                font-size: 1.6rem;
+            }
+
+            .header p {
+                font-size: 0.9rem;
+            }
+
+            .menu-btn {
+                display: none;
+            }
+
+            .nav-overlay {
+                display: none;
+            }
+
+            .sidebar {
+                position: sticky;
+                top: 80px;
+                right: auto;
+                width: 260px;
+                min-width: 260px;
+                height: calc(100vh - 80px);
+                flex-shrink: 0;
+                padding-top: 20px;
+                border-right: 1px solid var(--border);
+            }
+
+            .sidebar.active {
+                right: auto;
+            }
+
+            .container {
+                display: flex;
+                width: 100%;
+            }
+
+            .main-content {
+                flex: 1;
+                padding: 30px;
+                padding-bottom: 30px;
+                min-width: 0; /* Important for flex child */
+            }
+
+            .diagram-container {
+                padding: 30px;
+            }
+
+            .diagram-header h2 {
+                font-size: 1.5rem;
+            }
+
+            .bottom-nav {
+                display: none;
+            }
+
+            .footer {
+                margin-bottom: 0;
+            }
+
+            .scroll-hint {
+                display: none;
+            }
+
+            .diagram-container.zoomed + .scroll-hint {
+                display: flex;
+            }
+        }
+
+        /* Small phone adjustments */
+        @media (max-width: 360px) {
+            .header h1 {
+                font-size: 1rem;
+            }
+
+            .diagram-header h2 {
+                font-size: 1.1rem;
+            }
+        }
+
+        /* Print styles */
+        @media print {
+            .menu-btn, .bottom-nav, .sidebar, .nav-overlay, .zoom-controls, .scroll-hint {
+                display: none !important;
+            }
+
+            .diagram-section {
+                display: block !important;
+                page-break-inside: avoid;
+                margin-bottom: 20px;
+            }
+
+            .diagram-container {
+                box-shadow: none;
+                border: 1px solid #ccc;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <a href="index.html" class="home-btn" title="Back to Home">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+            </a>
+            <div class="header-text">
+                <h1>ILAE 2025 Seizure Classification</h1>
+                <p>Interactive Flowcharts v6.0</p>
+            </div>
+            <button class="menu-btn" onclick="toggleMenu()" aria-label="Menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+
+    <div class="nav-overlay" onclick="toggleMenu()"></div>
+
+    <div class="container">
+        <nav class="sidebar" id="sidebar">
+            <h3>Overview</h3>
+            <div class="nav-item active" onclick="showDiagram('multi-semiology', this)">
+                <span class="number">1</span>Multi-Semiology System
+            </div>
+            <div class="nav-item" onclick="showDiagram('master', this)">
+                <span class="number">2</span>Master Algorithm
+            </div>
+            
+            <h3>Classification Nodes</h3>
+            <div class="nav-item" onclick="showDiagram('node0', this)">
+                <span class="number">0</span>Epileptic vs. Mimic
+            </div>
+            <div class="nav-item" onclick="showDiagram('node1', this)">
+                <span class="number">1</span>Main Seizure Class
+            </div>
+            <div class="nav-item" onclick="showDiagram('node2a', this)">
+                <span class="number">2A</span>Focal Consciousness
+            </div>
+            <div class="nav-item" onclick="showDiagram('node2b', this)">
+                <span class="number">2B</span>Unknown Consciousness
+            </div>
+            <div class="nav-item" onclick="showDiagram('node3', this)">
+                <span class="number">3</span>Generalized Types
+            </div>
+            <div class="nav-item" onclick="showDiagram('node4', this)">
+                <span class="number">4</span>Basic Descriptor
+            </div>
+            
+            <h3>Reference</h3>
+            <div class="nav-item" onclick="showDiagram('matrix', this)">
+                <span class="number">✓</span>Consciousness Matrix
+            </div>
+            <div class="nav-item" onclick="showDiagram('dataflow', this)">
+                <span class="number">⇄</span>Data Flow
+            </div>
+            <div class="nav-item" onclick="showDiagram('state', this)">
+                <span class="number">◎</span>State Diagram
+            </div>
+            <div class="nav-item" onclick="showDiagram('codes', this)">
+                <span class="number">#</span>All Codes Table
+            </div>
+        </nav>
+
+        <main class="main-content">
+            <!-- Section 1: Multi-Semiology -->
+            <section id="multi-semiology" class="diagram-section active">
+                <div class="diagram-header">
+                    <h2>1. Multi-Semiology System Overview</h2>
+                    <p>A patient may have multiple distinct seizure types. Each is classified independently through the same algorithm.</p>
+                </div>
+                <div class="diagram-container" id="container-multi-semiology">
+                    <div class="diagram-wrapper">
+                        <div class="mermaid">
+flowchart TB
+    classDef patient fill:#2c3e50,stroke:#1a252f,color:#fff,stroke-width:3px
+    classDef tab fill:#3498db,stroke:#2980b9,color:#fff,stroke-width:2px
+    classDef active fill:#27ae60,stroke:#1e8449,color:#fff,stroke-width:3px
+    classDef add fill:#9b59b6,stroke:#8e44ad,color:#fff,stroke-width:2px
+    classDef algorithm fill:#f39c12,stroke:#d68910,color:#fff,stroke-width:2px
+    classDef output fill:#1abc9c,stroke:#16a085,color:#fff,stroke-width:2px
+
+    PATIENT["PATIENT RECORD<br/>MRN: 12345<br/>Classification Date: 2025-02-01"]:::patient
+    
+    subgraph TABS["Semiology Tab System"]
+        direction LR
+        TAB1["Semiology 1:<br/>'Epigastric Aura'"]:::tab
+        TAB2["Semiology 2:<br/>'FBTC Events'"]:::active
+        TAB3["Semiology 3:<br/>'Morning Jerks'"]:::tab
+        ADD["[+ Add New<br/>Semiology]"]:::add
+    end
+    
+    PATIENT --> TABS
+    
+    subgraph CURRENT["Currently Active: Semiology 2"]
+        ALGO["Classification<br/>Algorithm<br/>(Nodes 0-4)"]:::algorithm
+        
+        subgraph OUTPUT["Output for Semiology 2"]
+            CLASS["CLASSIFIER<br/>━━━━━━━━━━<br/>Code: FBTC; 1.3<br/>Main Class: Focal<br/>Consciousness: N/A"]:::output
+            DESC["DESCRIPTOR<br/>━━━━━━━━━━<br/>Observable: Yes<br/>(Auto-assigned)"]:::output
+        end
+        
+        ALGO --> CLASS
+        ALGO --> DESC
+    end
+    
+    TAB2 --> CURRENT
+                        </div>
+                    </div>
+                    <div class="zoom-controls">
+                        <button class="zoom-btn fit-btn" onclick="fitToScreen(this)">FIT</button>
+                        <button class="zoom-btn" onclick="zoomDiagram(this, 0.8)">−</button>
+                        <button class="zoom-btn" onclick="zoomDiagram(this, 1.25)">+</button>
+                    </div>
+                </div>
+                <div class="scroll-hint">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    Swipe to scroll • Pinch to zoom
+                </div>
+                <div class="info-box">
+                    <strong>Key Concept:</strong> Each semiology (seizure type) is documented with a user-defined name and classified independently. This allows comprehensive documentation for patients with multiple seizure types.
+                </div>
+            </section>
+
+            <!-- Section 2: Master Algorithm -->
+            <section id="master" class="diagram-section">
+                <div class="diagram-header">
+                    <h2>2. Master Algorithm Overview (v6.0)</h2>
+                    <p>Complete classification flow showing all nodes and automatic descriptor assignment paths.</p>
+                </div>
+                <div class="diagram-container" id="container-master">
+                    <div class="diagram-wrapper">
+                        <div class="mermaid">
+flowchart TD
+    classDef start fill:#e74c3c,stroke:#c0392b,color:#fff,stroke-width:3px
+    classDef decision fill:#f39c12,stroke:#d68910,color:#fff,stroke-width:2px
+    classDef focal fill:#3498db,stroke:#2980b9,color:#fff,stroke-width:2px
+    classDef generalized fill:#27ae60,stroke:#1e8449,color:#fff,stroke-width:2px
+    classDef unknown fill:#9b59b6,stroke:#8e44ad,color:#fff,stroke-width:2px
+    classDef descriptor fill:#e67e22,stroke:#d35400,color:#fff,stroke-width:2px
+    classDef endpoint fill:#1abc9c,stroke:#16a085,color:#fff,stroke-width:2px
+    classDef exit fill:#95a5a6,stroke:#7f8c8d,color:#fff,stroke-width:2px
+
+    START([START:<br/>New Semiology]):::start
+    
+    NODE0{"NODE 0:<br/>Epileptic Seizure<br/>vs. Mimic?"}:::decision
+    
+    START --> NODE0
+    
+    YES_EPI["YES -<br/>Epileptic"]:::focal
+    NO_EPI["NO -<br/>Mimic"]:::exit
+    UNCERTAIN["UNCERTAIN"]:::unknown
+    
+    NODE0 --> YES_EPI
+    NODE0 --> NO_EPI
+    NODE0 --> UNCERTAIN
+    
+    NO_EPI --> EXIT_MIMIC([EXIT:<br/>Mimic Classification]):::exit
+    
+    UNCERTAIN --> PROV{"Proceed<br/>provisionally?"}:::decision
+    PROV -->|No| EXIT_PEND([EXIT:<br/>Pending Workup]):::exit
+    PROV -->|Yes| PROV_FLAG["Set PROVISIONAL"]:::unknown
+    
+    YES_EPI --> NODE1
+    PROV_FLAG --> NODE1
+    
+    NODE1{"NODE 1:<br/>Main Seizure Class"}:::decision
+    
+    FOCAL["FOCAL"]:::focal
+    GEN["GENERALIZED"]:::generalized
+    UNK["UNKNOWN"]:::unknown
+    UC["UNCLASSIFIED"]:::exit
+    
+    NODE1 --> FOCAL
+    NODE1 --> GEN
+    NODE1 --> UNK
+    NODE1 --> UC
+    
+    NODE2A["Node 2A:<br/>Focal Consciousness"]:::focal
+    NODE3["Node 3:<br/>Generalized Type"]:::generalized
+    NODE2B["Node 2B:<br/>Unknown Consciousness"]:::unknown
+    
+    FOCAL --> NODE2A
+    GEN --> NODE3
+    UNK --> NODE2B
+    UC --> NODE4_UC["Node 4:<br/>Descriptor"]:::descriptor
+    
+    NODE2A -->|"FPC, F"| NODE4_F["Node 4:<br/>Descriptor"]:::descriptor
+    NODE2A -->|"FIC, FBTC"| AUTO_F["Auto-Assign:<br/>Observable = Yes"]:::endpoint
+    
+    NODE2B -->|"PC, U"| NODE4_U["Node 4:<br/>Descriptor"]:::descriptor
+    NODE2B -->|"IC, BTC"| AUTO_U["Auto-Assign:<br/>Observable = Yes"]:::endpoint
+    
+    NODE3 --> AUTO_G["Auto-Assign:<br/>Observable = Yes<br/>(All Generalized)"]:::endpoint
+    
+    NODE4_F --> END_F([END:<br/>Classification<br/>Complete]):::endpoint
+    NODE4_U --> END_U([END:<br/>Classification<br/>Complete]):::endpoint
+    NODE4_UC --> END_UC([END:<br/>Classification<br/>Complete]):::endpoint
+    
+    AUTO_F --> END_F
+    AUTO_U --> END_U
+    AUTO_G --> END_G([END:<br/>Classification<br/>Complete]):::endpoint
+                        </div>
+                    </div>
+                    <div class="zoom-controls">
+                        <button class="zoom-btn fit-btn" onclick="fitToScreen(this)">FIT</button>
+                        <button class="zoom-btn" onclick="zoomDiagram(this, 0.8)">−</button>
+                        <button class="zoom-btn" onclick="zoomDiagram(this, 1.25)">+</button>
+                    </div>
+                </div>
+                <div class="scroll-hint">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    Swipe to scroll • Pinch to zoom
+                </div>
+                <div class="info-box">
+                    <strong>Auto-Assignment Rule:</strong> Seizures with impaired consciousness (FIC, IC) or bilateral tonic-clonic activity (FBTC, BTC) automatically have "Observable = Yes". All generalized seizures also auto-assign "Yes".
+                </div>
+            </section>
+
+            <!-- Section 3: Node 0 -->
+            <section id="node0" class="diagram-section">
+                <div class="diagram-header">
+                    <h2>Node 0: Epileptic Seizure vs. Mimic</h2>
+                    <p>First decision point: Confirm the event is an epileptic seizure before proceeding with classification.</p>
+                </div>
+                <div class="diagram-container" id="container-node0">
+                    <div class="diagram-wrapper">
+                        <div class="mermaid">
+flowchart TD
+    classDef header fill:#2c3e50,stroke:#1a252f,color:#fff,stroke-width:2px
+    classDef question fill:#f39c12,stroke:#d68910,color:#fff,stroke-width:2px
+    classDef yes fill:#27ae60,stroke:#1e8449,color:#fff,stroke-width:2px
+    classDef no fill:#e74c3c,stroke:#c0392b,color:#fff,stroke-width:2px
+    classDef uncertain fill:#9b59b6,stroke:#8e44ad,color:#fff,stroke-width:2px
+    classDef mimic fill:#95a5a6,stroke:#7f8c8d,color:#fff,stroke-width:2px
+    classDef proceed fill:#3498db,stroke:#2980b9,color:#fff,stroke-width:2px
+    classDef endpoint fill:#1abc9c,stroke:#16a085,color:#fff,stroke-width:2px
+
+    HEADER["NODE 0: EPILEPTIC SEIZURE VS. MIMIC"]:::header
+    
+    QUESTION{"Based on clinical evidence<br/>(history, semiology, EEG, imaging),<br/>is this an EPILEPTIC SEIZURE?"}:::question
+    
+    HEADER --> QUESTION
+    
+    BTN_YES["✓ YES<br/>Epileptic Seizure"]:::yes
+    BTN_NO["✗ NO<br/>Mimic"]:::no
+    BTN_UNC["? UNCERTAIN<br/>More Info Needed"]:::uncertain
+    
+    QUESTION --> BTN_YES
+    QUESTION --> BTN_NO
+    QUESTION --> BTN_UNC
+    
+    BTN_YES --> NODE1["→ NODE 1<br/>Main Class Selection<br/>Status: CONFIRMED"]:::proceed
+    
+    subgraph NODE0A["Node 0A: Mimic Classification"]
+        MIMIC_Q{"Select mimic category"}:::question
+        PNES["PNES"]:::mimic
+        SYNCOPE["Syncope"]:::mimic
+        MOVEMENT["Movement Disorder"]:::mimic
+        SLEEP["Sleep Disorder"]:::mimic
+        OTHER["Other Mimic"]:::mimic
+    end
+    
+    BTN_NO --> MIMIC_Q
+    MIMIC_Q --> PNES
+    MIMIC_Q --> SYNCOPE
+    MIMIC_Q --> MOVEMENT
+    MIMIC_Q --> SLEEP
+    MIMIC_Q --> OTHER
+    
+    EXIT_MIMIC([EXIT: MIMIC<br/>→ Appropriate pathway]):::endpoint
+    
+    PNES --> EXIT_MIMIC
+    SYNCOPE --> EXIT_MIMIC
+    MOVEMENT --> EXIT_MIMIC
+    SLEEP --> EXIT_MIMIC
+    OTHER --> EXIT_MIMIC
+    
+    subgraph NODE0B["Node 0B: Uncertain"]
+        UNC_Q{"How to proceed?"}:::question
+        PROCEED["Proceed with<br/>PROVISIONAL<br/>classification"]:::proceed
+        DEFER["Defer<br/>classification"]:::mimic
+    end
+    
+    BTN_UNC --> UNC_Q
+    UNC_Q --> PROCEED
+    UNC_Q --> DEFER
+    
+    PROCEED --> SET_PROV["Status = PROVISIONAL"]:::proceed
+    SET_PROV --> NODE1
+    
+    DEFER --> EXIT_PENDING([EXIT: PENDING WORKUP]):::endpoint
+                        </div>
+                    </div>
+                    <div class="zoom-controls">
+                        <button class="zoom-btn fit-btn" onclick="fitToScreen(this)">FIT</button>
+                        <button class="zoom-btn" onclick="zoomDiagram(this, 0.8)">−</button>
+                        <button class="zoom-btn" onclick="zoomDiagram(this, 1.25)">+</button>
+                    </div>
+                </div>
+                <div class="scroll-hint">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    Swipe to scroll • Pinch to zoom
+                </div>
+            </section>
+
+            <!-- Section 4: Node 1 -->
+            <section id="node1" class="diagram-section">
+                <div class="diagram-header">
+                    <h2>Node 1: Main Seizure Class Selection</h2>
+                    <p>Determine whether the seizure is Focal, Generalized, Unknown, or Unclassified based on all available clinical information.</p>
+                </div>
+                <div class="diagram-container" id="container-node1">
+                    <div class="diagram-wrapper">
+                        <div class="mermaid">
+flowchart TD
+    classDef header fill:#2c3e50,stroke:#1a252f,color:#fff,stroke-width:2px
+    classDef question fill:#f39c12,stroke:#d68910,color:#fff,stroke-width:2px
+    classDef focal fill:#3498db,stroke:#2980b9,color:#fff,stroke-width:2px
+    classDef generalized fill:#27ae60,stroke:#1e8449,color:#fff,stroke-width:2px
+    classDef unknown fill:#9b59b6,stroke:#8e44ad,color:#fff,stroke-width:2px
+    classDef unclassified fill:#95a5a6,stroke:#7f8c8d,color:#fff,stroke-width:2px
+    classDef endpoint fill:#1abc9c,stroke:#16a085,color:#fff,stroke-width:2px
+
+    HEADER["NODE 1: MAIN SEIZURE CLASS"]:::header
+    
+    QUESTION{"Based on all available information<br/>(semiology, EEG, imaging, genetics),<br/>what is the seizure ORIGIN?"}:::question
+    
+    HEADER --> QUESTION
+    
+    BTN_FOCAL["FOCAL (F)<br/>━━━━━━━━━━━<br/>Networks limited to<br/>one hemisphere"]:::focal
+    
+    BTN_GEN["GENERALIZED (G)<br/>━━━━━━━━━━━━━━<br/>Rapidly engages<br/>bilateral networks"]:::generalized
+    
+    BTN_UNK["UNKNOWN (U)<br/>━━━━━━━━━━━<br/>Insufficient info to<br/>classify as F or G"]:::unknown
+    
+    BTN_UC["UNCLASSIFIED (UC)<br/>━━━━━━━━━━━━━━━<br/>Confident epileptic<br/>but no char. info"]:::unclassified
+    
+    QUESTION --> BTN_FOCAL
+    QUESTION --> BTN_GEN
+    QUESTION --> BTN_UNK
+    QUESTION --> BTN_UC
+    
+    NODE2A["→ NODE 2A<br/>Focal Consciousness<br/>Assessment"]:::focal
+    
+    NODE3["→ NODE 3<br/>Generalized Type<br/>Selection<br/>(Auto: Observable=Yes)"]:::generalized
+    
+    NODE2B["→ NODE 2B<br/>Unknown Consciousness<br/>Assessment"]:::unknown
+    
+    NODE4_UC["→ NODE 4<br/>Basic Descriptor"]:::unclassified
+    
+    BTN_FOCAL --> NODE2A
+    BTN_GEN --> NODE3
+    BTN_UNK --> NODE2B
+    BTN_UC --> NODE4_UC
+    
+    NODE4_UC --> END_UC([END: UC; 4<br/>Unclassified]):::endpoint
+                        </div>
+                    </div>
+                    <div class="zoom-controls">
+                        <button class="zoom-btn fit-btn" onclick="fitToScreen(this)">FIT</button>
+                        <button class="zoom-btn" onclick="zoomDiagram(this, 0.8)">−</button>
+                        <button class="zoom-btn" onclick="zoomDiagram(this, 1.25)">+</button>
+                    </div>
+                </div>
+                <div class="scroll-hint">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    Swipe to scroll • Pinch to zoom
+                </div>
+                <div class="info-box">
+                    <strong>ILAE 2025 Definitions:</strong><br>
+                    • <strong>Focal:</strong> Originates within networks limited to one hemisphere<br>
+                    • <strong>Generalized:</strong> Originates at some point within, and rapidly engages, bilaterally distributed networks<br>
+                    • <strong>Unknown:</strong> Information available but insufficient for clear classification<br>
+                    • <strong>Unclassified:</strong> Confident it's epileptic but no characterizing information
+                </div>
+            </section>
+
+            <!-- Section 5: Node 2A -->
+            <section id="node2a" class="diagram-section">
+                <div class="diagram-header">
+                    <h2>Node 2A: Focal Consciousness Assessment</h2>
+                    <p>Assess consciousness for focal seizures using awareness and responsiveness.</p>
+                </div>
+                <div class="diagram-container" id="container-node2a">
+                    <div class="diagram-wrapper">
+                        <div class="mermaid">
+flowchart TD
+    classDef header fill:#2c3e50,stroke:#1a252f,color:#fff,stroke-width:2px
+    classDef rule fill:#8e44ad,stroke:#6c3483,color:#fff,stroke-width:2px
+    classDef question fill:#f39c12,stroke:#d68910,color:#fff,stroke-width:2px
+    classDef intact fill:#27ae60,stroke:#1e8449,color:#fff,stroke-width:2px
+    classDef impaired fill:#e74c3c,stroke:#c0392b,color:#fff,stroke-width:2px
+    classDef unknown fill:#9b59b6,stroke:#8e44ad,color:#fff,stroke-width:2px
+    classDef caution fill:#e67e22,stroke:#d35400,color:#fff,stroke-width:2px
+    classDef descriptor fill:#f1c40f,stroke:#d4ac0d,color:#000,stroke-width:2px
+    classDef endpoint fill:#1abc9c,stroke:#16a085,color:#fff,stroke-width:2px
+    classDef auto fill:#c0392b,stroke:#922b21,color:#fff,stroke-width:2px
+
+    HEADER["NODE 2A: FOCAL CONSCIOUSNESS ASSESSMENT"]:::header
+    
+    RULE["ILAE 2025 RULE:<br/>If EITHER awareness OR responsiveness<br/>is impaired → Impaired Consciousness"]:::rule
+    
+    HEADER --> RULE
+    RULE --> N2A1
+    
+    N2A1{"2A-1: Does seizure evolve to<br/>BILATERAL TONIC-CLONIC?"}:::question
+    
+    N2A1_YES["YES"]:::impaired
+    N2A1_NO["NO"]:::intact
+    
+    N2A1 --> N2A1_YES
+    N2A1 --> N2A1_NO
+    
+    N2A1_YES --> END_FBTC["FBTC; 1.3<br/>Observable = Yes<br/>(AUTO)"]:::auto
+    END_FBTC --> FBTC_END([END]):::endpoint
+    
+    N2A1_NO --> N2A2
+    
+    N2A2{"2A-2: AWARENESS<br/>Can patient RECALL ictal events?"}:::question
+    
+    AWR_YES["INTACT<br/>Recalls events"]:::intact
+    AWR_NO["IMPAIRED<br/>No recall"]:::impaired
+    AWR_UNK["UNKNOWN<br/>Cannot assess"]:::unknown
+    
+    N2A2 --> AWR_YES
+    N2A2 --> AWR_NO
+    N2A2 --> AWR_UNK
+    
+    AWR_YES --> N2A3
+    
+    N2A3{"2A-3: RESPONSIVENESS<br/>Responds to verbal AND motor tasks?"}:::question
+    
+    RSP_YES["INTACT<br/>Normal response"]:::intact
+    RSP_NO["IMPAIRED<br/>Poor/delayed"]:::impaired
+    RSP_UNK["UNKNOWN<br/>Not tested"]:::unknown
+    
+    N2A3 --> RSP_YES
+    N2A3 --> RSP_NO
+    N2A3 --> RSP_UNK
+    
+    RSP_YES --> FPC_DESC["FPC; 1.1"]:::intact
+    FPC_DESC --> NODE4A["→ Node 4"]:::descriptor
+    
+    RSP_NO --> N2A5
+    RSP_UNK --> F_DESC1["F; 1<br/>(Undetermined)"]:::unknown
+    F_DESC1 --> NODE4B["→ Node 4"]:::descriptor
+    
+    N2A5{"2A-5: CAUTION<br/>Ictal paresis or<br/>receptive aphasia?"}:::caution
+    
+    PARESIS["Paresis/Aphasia<br/>likely"]:::caution
+    NOT_PARESIS["Ruled out"]:::impaired
+    
+    N2A5 --> PARESIS
+    N2A5 --> NOT_PARESIS
+    
+    PARESIS --> FPC_DESC
+    NOT_PARESIS --> FIC_AUTO1["FIC; 1.2<br/>Observable = Yes (AUTO)"]:::auto
+    FIC_AUTO1 --> FIC_END1([END]):::endpoint
+    
+    AWR_NO --> N2A4
+    
+    N2A4{"2A-4: CAUTION<br/>Isolated epileptic<br/>amnesia?"}:::caution
+    
+    AMNESIA_NO["Ruled out"]:::impaired
+    AMNESIA_MAYBE["Cannot rule out"]:::unknown
+    
+    N2A4 --> AMNESIA_NO
+    N2A4 --> AMNESIA_MAYBE
+    
+    AMNESIA_NO --> FIC_AUTO2["FIC; 1.2<br/>Observable = Yes (AUTO)"]:::auto
+    FIC_AUTO2 --> FIC_END2([END]):::endpoint
+    
+    AMNESIA_MAYBE --> F_DESC2["F; 1"]:::unknown
+    F_DESC2 --> NODE4C["→ Node 4"]:::descriptor
+    
+    AWR_UNK --> F_DESC3["F; 1<br/>(Undetermined)"]:::unknown
+    F_DESC3 --> NODE4D["→ Node 4"]:::descriptor
+                        </div>
+                    </div>
+                    <div class="zoom-controls">
+                        <button class="zoom-btn fit-btn" onclick="fitToScreen(this)">FIT</button>
+                        <button class="zoom-btn" onclick="zoomDiagram(this, 0.8)">−</button>
+                        <button class="zoom-btn" onclick="zoomDiagram(this, 1.25)">+</button>
+                    </div>
+                </div>
+                <div class="scroll-hint">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    Swipe to scroll • Pinch to zoom
+                </div>
+                <div class="info-box">
+                    <strong>ILAE 2025 Cautions:</strong><br>
+                    • Consider <strong>isolated epileptic amnesia</strong> as a cause for lack of recall<br>
+                    • Rule out <strong>ictal paresis</strong> or <strong>ictal receptive aphasia</strong> as causes of unresponsiveness
+                </div>
+            </section>
+
+            <!-- Section 6: Node 2B -->
+            <section id="node2b" class="diagram-section">
+                <div class="diagram-header">
+                    <h2>Node 2B: Unknown Origin Consciousness</h2>
+                    <p>Same consciousness assessment logic as Node 2A, applied when seizure origin is unknown.</p>
+                </div>
+                <div class="diagram-container" id="container-node2b">
+                    <div class="diagram-wrapper">
+                        <div class="mermaid">
+flowchart TD
+    classDef header fill:#2c3e50,stroke:#1a252f,color:#fff,stroke-width:2px
+    classDef question fill:#f39c12,stroke:#d68910,color:#fff,stroke-width:2px
+    classDef intact fill:#27ae60,stroke:#1e8449,color:#fff,stroke-width:2px
+    classDef impaired fill:#e74c3c,stroke:#c0392b,color:#fff,stroke-width:2px
+    classDef unknown fill:#9b59b6,stroke:#8e44ad,color:#fff,stroke-width:2px
+    classDef caution fill:#e67e22,stroke:#d35400,color:#fff,stroke-width:2px
+    classDef descriptor fill:#f1c40f,stroke:#d4ac0d,color:#000,stroke-width:2px
+    classDef endpoint fill:#1abc9c,stroke:#16a085,color:#fff,stroke-width:2px
+    classDef auto fill:#c0392b,stroke:#922b21,color:#fff,stroke-width:2px
+
+    HEADER["NODE 2B: UNKNOWN ORIGIN CONSCIOUSNESS"]:::header
+    
+    HEADER --> N2B1
+    
+    N2B1{"2B-1: Bilateral<br/>tonic-clonic?"}:::question
+    
+    BTC_YES["YES"]:::impaired
+    BTC_NO["NO"]:::intact
+    
+    N2B1 --> BTC_YES
+    N2B1 --> BTC_NO
+    
+    BTC_YES --> BTC_AUTO["BTC; 2.3<br/>Observable = Yes (AUTO)"]:::auto
+    BTC_AUTO --> BTC_END([END]):::endpoint
+    
+    BTC_NO --> N2B2
+    
+    N2B2{"2B-2: AWARENESS<br/>Recall events?"}:::question
+    
+    AWR_YES["INTACT"]:::intact
+    AWR_NO["IMPAIRED"]:::impaired
+    AWR_UNK["UNKNOWN"]:::unknown
+    
+    N2B2 --> AWR_YES
+    N2B2 --> AWR_NO
+    N2B2 --> AWR_UNK
+    
+    AWR_YES --> N2B3
+    
+    N2B3{"2B-3: RESPONSIVENESS"}:::question
+    
+    RSP_YES["INTACT"]:::intact
+    RSP_NO["IMPAIRED"]:::impaired
+    RSP_UNK["UNKNOWN"]:::unknown
+    
+    N2B3 --> RSP_YES
+    N2B3 --> RSP_NO
+    N2B3 --> RSP_UNK
+    
+    RSP_YES --> PC_DESC["PC; 2.1"]:::intact
+    PC_DESC --> NODE4A["→ Node 4"]:::descriptor
+    
+    RSP_NO --> N2B5
+    
+    N2B5{"2B-5: CAUTION<br/>Paresis/Aphasia?"}:::caution
+    
+    PAR_YES["Paresis/Aphasia likely"]:::caution
+    PAR_NO["Ruled out"]:::impaired
+    
+    N2B5 --> PAR_YES
+    N2B5 --> PAR_NO
+    
+    PAR_YES --> PC_DESC
+    PAR_NO --> IC_AUTO1["IC; 2.2<br/>Observable = Yes (AUTO)"]:::auto
+    IC_AUTO1 --> IC_END1([END]):::endpoint
+    
+    RSP_UNK --> U_DESC1["U; 2"]:::unknown
+    U_DESC1 --> NODE4B["→ Node 4"]:::descriptor
+    
+    AWR_NO --> N2B4
+    
+    N2B4{"2B-4: CAUTION<br/>Epileptic amnesia?"}:::caution
+    
+    AMN_NO["Ruled out"]:::impaired
+    AMN_MAYBE["Cannot rule out"]:::unknown
+    
+    N2B4 --> AMN_NO
+    N2B4 --> AMN_MAYBE
+    
+    AMN_NO --> IC_AUTO2["IC; 2.2<br/>Observable = Yes (AUTO)"]:::auto
+    IC_AUTO2 --> IC_END2([END]):::endpoint
+    
+    AMN_MAYBE --> U_DESC2["U; 2"]:::unknown
+    U_DESC2 --> NODE4C["→ Node 4"]:::descriptor
+    
+    AWR_UNK --> U_DESC3["U; 2<br/>(Undetermined)"]:::unknown
+    U_DESC3 --> NODE4D["→ Node 4"]:::descriptor
+                        </div>
+                    </div>
+                    <div class="zoom-controls">
+                        <button class="zoom-btn fit-btn" onclick="fitToScreen(this)">FIT</button>
+                        <button class="zoom-btn" onclick="zoomDiagram(this, 0.8)">−</button>
+                        <button class="zoom-btn" onclick="zoomDiagram(this, 1.25)">+</button>
+                    </div>
+                </div>
+                <div class="scroll-hint">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    Swipe to scroll • Pinch to zoom
+                </div>
+                <div class="correction-box">
+                    <strong>v5.0 Addition:</strong> Caution checks for isolated epileptic amnesia (Node 2B-4) and ictal paresis/aphasia (Node 2B-5) have been added to parallel Node 2A logic.
+                </div>
+            </section>
+
+            <!-- Section 7: Node 3 -->
+            <section id="node3" class="diagram-section">
+                <div class="diagram-header">
+                    <h2>Node 3: Generalized Seizure Types</h2>
+                    <p>All generalized seizures automatically have observable manifestations. Select the specific seizure type.</p>
+                </div>
+                <div class="diagram-container" id="container-node3">
+                    <div class="diagram-wrapper">
+                        <div class="mermaid">
+flowchart TD
+    classDef header fill:#2c3e50,stroke:#1a252f,color:#fff,stroke-width:2px
+    classDef question fill:#f39c12,stroke:#d68910,color:#fff,stroke-width:2px
+    classDef absence fill:#3498db,stroke:#2980b9,color:#fff,stroke-width:2px
+    classDef tc fill:#e74c3c,stroke:#c0392b,color:#fff,stroke-width:2px
+    classDef other fill:#9b59b6,stroke:#8e44ad,color:#fff,stroke-width:2px
+    classDef parent fill:#7f8c8d,stroke:#5d6d7e,color:#fff,stroke-width:2px
+    classDef endpoint fill:#1abc9c,stroke:#16a085,color:#fff,stroke-width:2px
+
+    HEADER["NODE 3: GENERALIZED TYPE SELECTION<br/>(All types auto-assign Observable = Yes)"]:::header
+    
+    N3_1{"3-1: Select category"}:::question
+    
+    HEADER --> N3_1
+    
+    CAT_ABS["ABSENCE"]:::absence
+    CAT_TC["TONIC-CLONIC"]:::tc
+    CAT_OTHER["OTHER<br/>GENERALIZED"]:::other
+    CAT_UNDET["Type<br/>Undetermined"]:::parent
+    
+    N3_1 --> CAT_ABS
+    N3_1 --> CAT_TC
+    N3_1 --> CAT_OTHER
+    N3_1 --> CAT_UNDET
+    
+    CAT_UNDET --> END_G([END: G; 3]):::endpoint
+    
+    subgraph NODE3A["Absence Subtypes"]
+        ABS_Q{"Select type"}:::question
+        TA["Typical<br/>3 Hz spike-wave"]:::absence
+        AA["Atypical<br/>Irregular spike-wave"]:::absence
+        MA["Myoclonic<br/>+ bilateral jerks"]:::absence
+        EMA["Eyelid Myoclonia<br/>± absence"]:::absence
+        AS["Absence -<br/>Subtype undet."]:::parent
+    end
+    
+    CAT_ABS --> ABS_Q
+    ABS_Q --> TA
+    ABS_Q --> AA
+    ABS_Q --> MA
+    ABS_Q --> EMA
+    ABS_Q --> AS
+    
+    TA --> END_TA([TA; 3.1.1]):::endpoint
+    AA --> END_AA([AA; 3.1.2]):::endpoint
+    MA --> END_MA([MA; 3.1.3]):::endpoint
+    EMA --> END_EMA([EMA; 3.1.4]):::endpoint
+    AS --> END_AS([AS; 3.1]):::endpoint
+    
+    subgraph NODE3B["Tonic-Clonic Subtypes"]
+        TC_Q{"Select type"}:::question
+        GTC["Generalized TC"]:::tc
+        MTC["Myoclonic-TC"]:::tc
+        ATC["Absence-to-TC"]:::tc
+    end
+    
+    CAT_TC --> TC_Q
+    TC_Q --> GTC
+    TC_Q --> MTC
+    TC_Q --> ATC
+    
+    GTC --> END_GTC([GTC; 3.2]):::endpoint
+    MTC --> END_MTC([MTC; 3.2.1]):::endpoint
+    ATC --> END_ATC([ATC; 3.2.2]):::endpoint
+    
+    subgraph NODE3C["Other Types"]
+        OTH_Q{"Select type"}:::question
+        GM["Myoclonic"]:::other
+        GC["Clonic"]:::other
+        GNM["Negative Myoclonus"]:::other
+        GES["Epileptic Spasms"]:::other
+        GT["Tonic"]:::other
+        GA["Atonic"]:::other
+        GMA["Myoclonic-Atonic"]:::other
+    end
+    
+    CAT_OTHER --> OTH_Q
+    OTH_Q --> GM
+    OTH_Q --> GC
+    OTH_Q --> GNM
+    OTH_Q --> GES
+    OTH_Q --> GT
+    OTH_Q --> GA
+    OTH_Q --> GMA
+    
+    GM --> END_GM([GM; 3.3.1]):::endpoint
+    GC --> END_GC([GC; 3.3.2]):::endpoint
+    GNM --> END_GNM([GNM; 3.3.3]):::endpoint
+    GES --> END_GES([GES; 3.3.4]):::endpoint
+    GT --> END_GT([GT; 3.3.5]):::endpoint
+    GA --> END_GA([GA; 3.3.6]):::endpoint
+    GMA --> END_GMA([GMA; 3.3.7]):::endpoint
+                        </div>
+                    </div>
+                    <div class="zoom-controls">
+                        <button class="zoom-btn fit-btn" onclick="fitToScreen(this)">FIT</button>
+                        <button class="zoom-btn" onclick="zoomDiagram(this, 0.8)">−</button>
+                        <button class="zoom-btn" onclick="zoomDiagram(this, 1.25)">+</button>
+                    </div>
+                </div>
+                <div class="scroll-hint">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    Swipe to scroll • Pinch to zoom
+                </div>
+                <div class="info-box">
+                    <strong>Parent Term Options:</strong> Per ILAE 2025, classification can halt at any hierarchical level. G; 3 and AS; 3.1 are available when subtype cannot be determined.
+                </div>
+            </section>
+
+            <!-- Section 8: Node 4 -->
+            <section id="node4" class="diagram-section">
+                <div class="diagram-header">
+                    <h2>Node 4: Basic Descriptor Assignment</h2>
+                    <p>Determine if seizure has observable manifestations. Auto-assigned for impaired consciousness and all generalized types.</p>
+                </div>
+                <div class="diagram-container" id="container-node4">
+                    <div class="diagram-wrapper">
+                        <div class="mermaid">
+flowchart TD
+    classDef header fill:#2c3e50,stroke:#1a252f,color:#fff,stroke-width:2px
+    classDef auto fill:#c0392b,stroke:#922b21,color:#fff,stroke-width:2px
+    classDef question fill:#f39c12,stroke:#d68910,color:#fff,stroke-width:2px
+    classDef yes fill:#27ae60,stroke:#1e8449,color:#fff,stroke-width:2px
+    classDef no fill:#3498db,stroke:#2980b9,color:#fff,stroke-width:2px
+    classDef unknown fill:#9b59b6,stroke:#8e44ad,color:#fff,stroke-width:2px
+    classDef endpoint fill:#1abc9c,stroke:#16a085,color:#fff,stroke-width:2px
+    classDef info fill:#ecf0f1,stroke:#bdc3c7,color:#2c3e50,stroke-width:1px
+
+    HEADER["NODE 4: BASIC DESCRIPTOR ASSIGNMENT"]:::header
+    
+    RULE["ILAE 2025 Rule (p.1809):<br/>'Seizures with impaired consciousness are inherently<br/>considered to have observable manifestations.'"]:::info
+    
+    HEADER --> RULE
+    RULE --> CHECK
+    
+    CHECK{"Check seizure type"}:::question
+    
+    AUTO_TYPES["FIC, FBTC, IC, BTC,<br/>or ANY Generalized?"]:::auto
+    NEED_ASK["FPC, F, PC, U, UC?"]:::question
+    
+    CHECK --> AUTO_TYPES
+    CHECK --> NEED_ASK
+    
+    AUTO_TYPES --> AUTO_YES["AUTO-ASSIGN:<br/>Observable = YES"]:::auto
+    AUTO_YES --> END_AUTO([END: Classification Complete]):::endpoint
+    
+    NEED_ASK --> N4_Q
+    
+    N4_Q{"Were there OBSERVABLE<br/>MANIFESTATIONS?<br/><br/>Motor, Aphasic, Autonomic, Other"}:::question
+    
+    BTN_YES["YES<br/>Observable present"]:::yes
+    BTN_NO["NO<br/>Subjective only<br/>(aura alone)"]:::no
+    BTN_UNK["UNKNOWN<br/>No witness"]:::unknown
+    
+    N4_Q --> BTN_YES
+    N4_Q --> BTN_NO
+    N4_Q --> BTN_UNK
+    
+    BTN_YES --> END_OBS_Y([END: With<br/>observable manifestations]):::endpoint
+    BTN_NO --> END_OBS_N([END: Without<br/>observable manifestations]):::endpoint
+    BTN_UNK --> END_OBS_U([END: Observable<br/>manifestations unknown]):::endpoint
+                        </div>
+                    </div>
+                    <div class="zoom-controls">
+                        <button class="zoom-btn fit-btn" onclick="fitToScreen(this)">FIT</button>
+                        <button class="zoom-btn" onclick="zoomDiagram(this, 0.8)">−</button>
+                        <button class="zoom-btn" onclick="zoomDiagram(this, 1.25)">+</button>
+                    </div>
+                </div>
+                <div class="scroll-hint">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    Swipe to scroll • Pinch to zoom
+                </div>
+                <div class="info-box">
+                    <strong>Observable Manifestation Types (ILAE 2025 Table 2):</strong><br>
+                    • <strong>Motor:</strong> Jerking, stiffening, automatisms, tonic posturing<br>
+                    • <strong>Aphasic:</strong> Speech arrest, vocalizations<br>
+                    • <strong>Autonomic:</strong> Color change, sweating, pupil changes<br>
+                    • <strong>Other:</strong> Eye deviation, behavioral arrest
+                </div>
+            </section>
+
+            <!-- Section 9: Consciousness Matrix -->
+            <section id="matrix" class="diagram-section">
+                <div class="diagram-header">
+                    <h2>Consciousness Assessment Matrix</h2>
+                    <p>Determining consciousness status based on awareness and responsiveness combinations.</p>
+                </div>
+                <div class="diagram-container" id="container-matrix">
+                    <div class="diagram-wrapper">
+                        <div class="mermaid">
+flowchart LR
+    classDef preserved fill:#27ae60,stroke:#1e8449,color:#fff,stroke-width:2px
+    classDef impaired fill:#e74c3c,stroke:#c0392b,color:#fff,stroke-width:2px
+    classDef undetermined fill:#9b59b6,stroke:#8e44ad,color:#fff,stroke-width:2px
+    classDef header fill:#2c3e50,stroke:#1a252f,color:#fff,stroke-width:2px
+
+    TITLE["CONSCIOUSNESS MATRIX<br/>ILAE 2025: If EITHER impaired → Impaired"]:::header
+    
+    subgraph OUTCOMES["Classification Outcomes"]
+        direction TB
+        PRES["PRESERVED<br/>(FPC / PC)"]:::preserved
+        IMP["IMPAIRED<br/>(FIC / IC)"]:::impaired
+        UND["UNDETERMINED<br/>(F / U)"]:::undetermined
+    end
+    
+    subgraph COMBINATIONS["Awareness + Responsiveness"]
+        direction TB
+        C1["Row 1: Intact + Intact"]:::preserved
+        C2["Row 2: Intact + Impaired*"]:::impaired
+        C3["Row 3: Intact + Unknown"]:::undetermined
+        C4["Row 4: Impaired + Any"]:::impaired
+        C5["Row 5: Unknown + Intact"]:::undetermined
+        C6["Row 6: Unknown + Impaired"]:::impaired
+        C7["Row 7: Unknown + Unknown"]:::undetermined
+    end
+    
+    C1 --> PRES
+    C2 --> IMP
+    C3 --> UND
+    C4 --> IMP
+    C5 --> UND
+    C6 --> IMP
+    C7 --> UND
+                        </div>
+                    </div>
+                    <div class="zoom-controls">
+                        <button class="zoom-btn fit-btn" onclick="fitToScreen(this)">FIT</button>
+                        <button class="zoom-btn" onclick="zoomDiagram(this, 0.8)">−</button>
+                        <button class="zoom-btn" onclick="zoomDiagram(this, 1.25)">+</button>
+                    </div>
+                </div>
+                <div class="scroll-hint">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    Swipe to scroll • Pinch to zoom
+                </div>
+                <div class="info-box">
+                    <strong>Key Point (Row 5):</strong> Unknown awareness + Intact responsiveness = <strong>UNDETERMINED</strong><br><br>
+                    <strong>Rationale:</strong> Intact responsiveness alone cannot confirm preserved consciousness because the patient could be responding but not forming memories (impaired awareness).
+                </div>
+            </section>
+
+            <!-- Section 10: Data Flow -->
+            <section id="dataflow" class="diagram-section">
+                <div class="diagram-header">
+                    <h2>Multi-Semiology Data Flow</h2>
+                    <p>How multiple seizure types for a single patient flow through the system and are stored.</p>
+                </div>
+                <div class="diagram-container" id="container-dataflow">
+                    <div class="diagram-wrapper">
+                        <div class="mermaid">
+flowchart TB
+    classDef patient fill:#2c3e50,stroke:#1a252f,color:#fff,stroke-width:3px
+    classDef algorithm fill:#f39c12,stroke:#d68910,color:#fff,stroke-width:2px
+    classDef classifier fill:#27ae60,stroke:#1e8449,color:#fff,stroke-width:2px
+    classDef descriptor fill:#9b59b6,stroke:#8e44ad,color:#fff,stroke-width:2px
+    classDef database fill:#1abc9c,stroke:#16a085,color:#fff,stroke-width:2px
+
+    PATIENT["PATIENT<br/>MRN: 12345"]:::patient
+    
+    subgraph SEM1["Semiology 1: Epigastric Aura"]
+        S1_CLASS["FPC; 1.1"]:::classifier
+        S1_DESC["Without observable"]:::descriptor
+    end
+    
+    subgraph SEM2["Semiology 2: Automotor Seizure"]
+        S2_CLASS["FIC; 1.2"]:::classifier
+        S2_DESC["With observable - Auto"]:::descriptor
+    end
+    
+    subgraph SEM3["Semiology 3: FBTC"]
+        S3_CLASS["FBTC; 1.3"]:::classifier
+        S3_DESC["With observable - Auto"]:::descriptor
+    end
+    
+    PATIENT --> SEM1
+    PATIENT --> SEM2
+    PATIENT --> SEM3
+    
+    DB["DATABASE RECORD<br/>━━━━━━━━━━━━━━━━━<br/>FPC - obs: No<br/>FIC - obs: Yes<br/>FBTC - obs: Yes"]:::database
+    
+    SEM1 --> DB
+    SEM2 --> DB
+    SEM3 --> DB
+                        </div>
+                    </div>
+                    <div class="zoom-controls">
+                        <button class="zoom-btn fit-btn" onclick="fitToScreen(this)">FIT</button>
+                        <button class="zoom-btn" onclick="zoomDiagram(this, 0.8)">−</button>
+                        <button class="zoom-btn" onclick="zoomDiagram(this, 1.25)">+</button>
+                    </div>
+                </div>
+                <div class="scroll-hint">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    Swipe to scroll • Pinch to zoom
+                </div>
+            </section>
+
+            <!-- Section 11: State Diagram -->
+            <section id="state" class="diagram-section">
+                <div class="diagram-header">
+                    <h2>Complete Algorithm State Diagram</h2>
+                    <p>Full state machine representation of all possible paths through the classification algorithm.</p>
+                </div>
+                <div class="diagram-container" id="container-state">
+                    <div class="diagram-wrapper">
+                        <div class="mermaid">
+stateDiagram-v2
+    [*] --> Node0: Start New Semiology
+    
+    Node0 --> Node0A: Not Epileptic
+    Node0 --> Node0B: Uncertain
+    Node0 --> Node1: Epileptic Seizure
+    
+    Node0A --> ExitMimic: Classify Mimic
+    Node0B --> Node1: Provisional
+    Node0B --> ExitPending: Defer
+    
+    state Node1 {
+        [*] --> MainClassQ
+        MainClassQ --> Focal
+        MainClassQ --> Generalized
+        MainClassQ --> Unknown
+        MainClassQ --> Unclassified
+    }
+    
+    Focal --> Node2A
+    Generalized --> Node3
+    Unknown --> Node2B
+    Unclassified --> Node4
+    
+    state Node2A {
+        [*] --> CheckFBTC
+        CheckFBTC --> FBTC_Auto: Yes
+        CheckFBTC --> Awareness: No
+        Awareness --> Responsiveness: Intact
+        Awareness --> FIC_Auto: Impaired
+        Awareness --> Undetermined: Unknown
+        Responsiveness --> FPC_Node4: Intact
+        Responsiveness --> FIC_Auto: Impaired
+        Responsiveness --> F_Node4: Unknown
+    }
+    
+    state Node2B {
+        [*] --> CheckBTC
+        CheckBTC --> BTC_Auto: Yes
+        CheckBTC --> AwarenessU: No
+        AwarenessU --> ResponsivenessU: Intact
+        AwarenessU --> IC_Auto: Impaired
+        AwarenessU --> UndeterminedU: Unknown
+    }
+    
+    state Node3 {
+        [*] --> TypeSelect
+        TypeSelect --> AbsenceTypes
+        TypeSelect --> TCTypes
+        TypeSelect --> OtherTypes
+        TypeSelect --> G_Undetermined
+    }
+    
+    Node2A --> Node4: FPC, F
+    Node2A --> Complete: FIC, FBTC
+    Node2B --> Node4: PC, U
+    Node2B --> Complete: IC, BTC
+    Node3 --> Complete: All types
+    Node4 --> Complete
+    
+    Complete --> [*]
+    ExitMimic --> [*]
+    ExitPending --> [*]
+                        </div>
+                    </div>
+                    <div class="zoom-controls">
+                        <button class="zoom-btn fit-btn" onclick="fitToScreen(this)">FIT</button>
+                        <button class="zoom-btn" onclick="zoomDiagram(this, 0.8)">−</button>
+                        <button class="zoom-btn" onclick="zoomDiagram(this, 1.25)">+</button>
+                    </div>
+                </div>
+                <div class="scroll-hint">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    Swipe to scroll • Pinch to zoom
+                </div>
+            </section>
+
+            <!-- Section 12: Codes Table -->
+            <section id="codes" class="diagram-section">
+                <div class="diagram-header">
+                    <h2>Complete Classification Codes</h2>
+                    <p>All 21 seizure types plus parent terms with their ILAE numbers and auto-assignment status.</p>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Code</th>
+                                <th>ILAE #</th>
+                                <th>Full Name</th>
+                                <th>Main Class</th>
+                                <th>Consciousness</th>
+                                <th>Observable</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="6" style="background:#3498db;color:white;font-weight:bold;">Focal Seizures</td></tr>
+                            <tr>
+                                <td><strong>F</strong></td>
+                                <td>1</td>
+                                <td>Focal (consciousness undetermined)</td>
+                                <td>Focal</td>
+                                <td>Undetermined</td>
+                                <td><span class="tag tag-ask">Ask</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>FPC</strong></td>
+                                <td>1.1</td>
+                                <td>Focal Preserved Consciousness</td>
+                                <td>Focal</td>
+                                <td>Preserved</td>
+                                <td><span class="tag tag-ask">Ask</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>FIC</strong></td>
+                                <td>1.2</td>
+                                <td>Focal Impaired Consciousness</td>
+                                <td>Focal</td>
+                                <td>Impaired</td>
+                                <td><span class="tag tag-auto">Auto-Yes</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>FBTC</strong></td>
+                                <td>1.3</td>
+                                <td>Focal to Bilateral Tonic-Clonic</td>
+                                <td>Focal</td>
+                                <td>N/A</td>
+                                <td><span class="tag tag-auto">Auto-Yes</span></td>
+                            </tr>
+                            
+                            <tr><td colspan="6" style="background:#9b59b6;color:white;font-weight:bold;">Unknown Origin Seizures</td></tr>
+                            <tr>
+                                <td><strong>U</strong></td>
+                                <td>2</td>
+                                <td>Unknown (consciousness undetermined)</td>
+                                <td>Unknown</td>
+                                <td>Undetermined</td>
+                                <td><span class="tag tag-ask">Ask</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>PC</strong></td>
+                                <td>2.1</td>
+                                <td>Unknown - Preserved Consciousness</td>
+                                <td>Unknown</td>
+                                <td>Preserved</td>
+                                <td><span class="tag tag-ask">Ask</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>IC</strong></td>
+                                <td>2.2</td>
+                                <td>Unknown - Impaired Consciousness</td>
+                                <td>Unknown</td>
+                                <td>Impaired</td>
+                                <td><span class="tag tag-auto">Auto-Yes</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>BTC</strong></td>
+                                <td>2.3</td>
+                                <td>Unknown - Bilateral Tonic-Clonic</td>
+                                <td>Unknown</td>
+                                <td>N/A</td>
+                                <td><span class="tag tag-auto">Auto-Yes</span></td>
+                            </tr>
+                            
+                            <tr><td colspan="6" style="background:#27ae60;color:white;font-weight:bold;">Generalized Seizures</td></tr>
+                            <tr>
+                                <td><strong>G</strong></td>
+                                <td>3</td>
+                                <td>Generalized (type undetermined)</td>
+                                <td>Generalized</td>
+                                <td>N/A</td>
+                                <td><span class="tag tag-auto">Auto-Yes</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>AS</strong></td>
+                                <td>3.1</td>
+                                <td>Absence (subtype undetermined)</td>
+                                <td>Generalized</td>
+                                <td>N/A</td>
+                                <td><span class="tag tag-auto">Auto-Yes</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>TA</strong></td>
+                                <td>3.1.1</td>
+                                <td>Typical Absence</td>
+                                <td>Generalized</td>
+                                <td>N/A</td>
+                                <td><span class="tag tag-auto">Auto-Yes</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>AA</strong></td>
+                                <td>3.1.2</td>
+                                <td>Atypical Absence</td>
+                                <td>Generalized</td>
+                                <td>N/A</td>
+                                <td><span class="tag tag-auto">Auto-Yes</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>MA</strong></td>
+                                <td>3.1.3</td>
+                                <td>Myoclonic Absence</td>
+                                <td>Generalized</td>
+                                <td>N/A</td>
+                                <td><span class="tag tag-auto">Auto-Yes</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>EMA</strong></td>
+                                <td>3.1.4</td>
+                                <td>Eyelid Myoclonia ± Absence</td>
+                                <td>Generalized</td>
+                                <td>N/A</td>
+                                <td><span class="tag tag-auto">Auto-Yes</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>GTC</strong></td>
+                                <td>3.2</td>
+                                <td>Generalized Tonic-Clonic</td>
+                                <td>Generalized</td>
+                                <td>N/A</td>
+                                <td><span class="tag tag-auto">Auto-Yes</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>MTC</strong></td>
+                                <td>3.2.1</td>
+                                <td>Myoclonic-Tonic-Clonic</td>
+                                <td>Generalized</td>
+                                <td>N/A</td>
+                                <td><span class="tag tag-auto">Auto-Yes</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>ATC</strong></td>
+                                <td>3.2.2</td>
+                                <td>Absence-to-Tonic-Clonic</td>
+                                <td>Generalized</td>
+                                <td>N/A</td>
+                                <td><span class="tag tag-auto">Auto-Yes</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>GM</strong></td>
+                                <td>3.3.1</td>
+                                <td>Generalized Myoclonic</td>
+                                <td>Generalized</td>
+                                <td>N/A</td>
+                                <td><span class="tag tag-auto">Auto-Yes</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>GC</strong></td>
+                                <td>3.3.2</td>
+                                <td>Generalized Clonic</td>
+                                <td>Generalized</td>
+                                <td>N/A</td>
+                                <td><span class="tag tag-auto">Auto-Yes</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>GNM</strong></td>
+                                <td>3.3.3</td>
+                                <td>Generalized Negative Myoclonus</td>
+                                <td>Generalized</td>
+                                <td>N/A</td>
+                                <td><span class="tag tag-auto">Auto-Yes</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>GES</strong></td>
+                                <td>3.3.4</td>
+                                <td>Generalized Epileptic Spasms</td>
+                                <td>Generalized</td>
+                                <td>N/A</td>
+                                <td><span class="tag tag-auto">Auto-Yes</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>GT</strong></td>
+                                <td>3.3.5</td>
+                                <td>Generalized Tonic</td>
+                                <td>Generalized</td>
+                                <td>N/A</td>
+                                <td><span class="tag tag-auto">Auto-Yes</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>GA</strong></td>
+                                <td>3.3.6</td>
+                                <td>Generalized Atonic</td>
+                                <td>Generalized</td>
+                                <td>N/A</td>
+                                <td><span class="tag tag-auto">Auto-Yes</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>GMA</strong></td>
+                                <td>3.3.7</td>
+                                <td>Generalized Myoclonic-Atonic</td>
+                                <td>Generalized</td>
+                                <td>N/A</td>
+                                <td><span class="tag tag-auto">Auto-Yes</span></td>
+                            </tr>
+                            
+                            <tr><td colspan="6" style="background:#95a5a6;color:white;font-weight:bold;">Unclassified</td></tr>
+                            <tr>
+                                <td><strong>UC</strong></td>
+                                <td>4</td>
+                                <td>Unclassified</td>
+                                <td>Unclassified</td>
+                                <td>N/A</td>
+                                <td><span class="tag tag-ask">Ask</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="info-box">
+                    <strong>Legend:</strong><br>
+                    • <span class="tag tag-auto">Auto-Yes</span> = Observable manifestations automatically assigned as "Yes"<br>
+                    • <span class="tag tag-ask">Ask</span> = User must specify observable manifestations in Node 4
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Bottom Navigation for Mobile -->
+    <nav class="bottom-nav">
+        <div class="bottom-nav-item active" onclick="showDiagram('multi-semiology', null); setActiveBottomNav(this);">
+            <span class="icon">📊</span>
+            Overview
+        </div>
+        <div class="bottom-nav-item" onclick="showDiagram('node1', null); setActiveBottomNav(this);">
+            <span class="icon">🎯</span>
+            Classify
+        </div>
+        <div class="bottom-nav-item" onclick="showDiagram('matrix', null); setActiveBottomNav(this);">
+            <span class="icon">📋</span>
+            Matrix
+        </div>
+        <div class="bottom-nav-item" onclick="showDiagram('codes', null); setActiveBottomNav(this);">
+            <span class="icon">📑</span>
+            Codes
+        </div>
+        <div class="bottom-nav-item" onclick="toggleMenu()">
+            <span class="icon">☰</span>
+            Menu
+        </div>
+    </nav>
+
+    <footer class="footer">
+        <p>ILAE 2025 Seizure Classification System v6.0</p>
+        <p>Based on <a href="https://doi.org/10.1111/epi.18338" target="_blank">Beniczky et al., Epilepsia 2025;66:1804-1823</a></p>
+        <p style="margin-top: 8px;">Made by Arankesh Mahadevan | Neurology Resident | University of Utah</p>
+    </footer>
+
+    <script>
+        // Initialize Mermaid with fit-to-container settings
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: 'default',
+            securityLevel: 'loose',
+            flowchart: {
+                useMaxWidth: true,  // KEY: Allow SVG to scale to container
+                htmlLabels: true,
+                curve: 'basis'
+            }
+        });
+
+        // Track zoom state per diagram
+        const zoomState = {};
+
+        // Helper function to render diagrams
+        function renderDiagramsInSection(section) {
+            const mermaidDivs = section.querySelectorAll('.mermaid');
+            mermaidDivs.forEach(div => {
+                if (!div.querySelector('svg')) {
+                    div.removeAttribute('data-processed');
+                    try {
+                        mermaid.init(undefined, div);
+                    } catch (e) {
+                        console.error('Mermaid rendering error:', e);
+                    }
+                }
+            });
+        }
+
+        // Toggle mobile menu
+        function toggleMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.querySelector('.nav-overlay');
+            const menuBtn = document.querySelector('.menu-btn');
+            
+            sidebar.classList.toggle('active');
+            overlay.classList.toggle('active');
+            menuBtn.classList.toggle('active');
+        }
+
+        // Show diagram section
+        function showDiagram(id, clickedNavItem) {
+            // Hide all sections
+            document.querySelectorAll('.diagram-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remove active class from all nav items
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Show selected section
+            const section = document.getElementById(id);
+            section.classList.add('active');
+            
+            // Add active class to clicked nav item
+            if (clickedNavItem) {
+                clickedNavItem.classList.add('active');
+            } else {
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    if (item.getAttribute('onclick')?.includes(id)) {
+                        item.classList.add('active');
+                    }
+                });
+            }
+            
+            // Close mobile menu
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.querySelector('.nav-overlay');
+            const menuBtn = document.querySelector('.menu-btn');
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+            menuBtn.classList.remove('active');
+            
+            // Render mermaid diagrams
+            setTimeout(() => {
+                renderDiagramsInSection(section);
+            }, 50);
+
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Set active bottom nav
+        function setActiveBottomNav(item) {
+            document.querySelectorAll('.bottom-nav-item').forEach(nav => {
+                nav.classList.remove('active');
+            });
+            item.classList.add('active');
+        }
+
+        // Fit diagram to screen (reset zoom)
+        function fitToScreen(btn) {
+            const container = btn.closest('.diagram-container');
+            const wrapper = container.querySelector('.diagram-wrapper');
+            const diagramId = container.id;
+            
+            // Reset zoom state
+            zoomState[diagramId] = 1;
+            wrapper.style.transform = 'scale(1)';
+            
+            // Remove zoomed class to restore fit-to-width behavior
+            container.classList.remove('zoomed');
+            
+            // Update button states
+            container.querySelectorAll('.zoom-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+
+        // Zoom diagram
+        function zoomDiagram(btn, factor) {
+            const container = btn.closest('.diagram-container');
+            const wrapper = container.querySelector('.diagram-wrapper');
+            const diagramId = container.id;
+            
+            // Initialize zoom state if needed
+            if (!zoomState[diagramId]) {
+                zoomState[diagramId] = 1;
+            }
+            
+            // Apply zoom factor
+            zoomState[diagramId] *= factor;
+            
+            // Clamp zoom level
+            zoomState[diagramId] = Math.max(0.3, Math.min(4, zoomState[diagramId]));
+            
+            // Add zoomed class to enable scrolling and remove max-width constraint
+            container.classList.add('zoomed');
+            
+            // Apply transform
+            wrapper.style.transform = `scale(${zoomState[diagramId]})`;
+            wrapper.style.transformOrigin = 'top left';
+            
+            // Update fit button state
+            container.querySelector('.fit-btn')?.classList.remove('active');
+        }
+
+        // Initialize first visible diagram on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const activeSection = document.querySelector('.diagram-section.active');
+            if (activeSection) {
+                renderDiagramsInSection(activeSection);
+            }
+        });
+
+        // Handle pinch-to-zoom on mobile
+        document.querySelectorAll('.diagram-container').forEach(container => {
+            let initialDistance = 0;
+            let currentScale = 1;
+
+            container.addEventListener('touchstart', function(e) {
+                if (e.touches.length === 2) {
+                    initialDistance = Math.hypot(
+                        e.touches[0].pageX - e.touches[1].pageX,
+                        e.touches[0].pageY - e.touches[1].pageY
+                    );
+                    currentScale = zoomState[container.id] || 1;
+                }
+            }, { passive: true });
+
+            container.addEventListener('touchmove', function(e) {
+                if (e.touches.length === 2) {
+                    const currentDistance = Math.hypot(
+                        e.touches[0].pageX - e.touches[1].pageX,
+                        e.touches[0].pageY - e.touches[1].pageY
+                    );
+                    
+                    const scale = (currentDistance / initialDistance) * currentScale;
+                    const clampedScale = Math.max(0.3, Math.min(4, scale));
+                    
+                    const wrapper = container.querySelector('.diagram-wrapper');
+                    zoomState[container.id] = clampedScale;
+                    
+                    // Add zoomed class when pinching
+                    container.classList.add('zoomed');
+                    wrapper.style.transform = `scale(${clampedScale})`;
+                    wrapper.style.transformOrigin = 'top left';
+                }
+            }, { passive: true });
+        });
+    </script>
+</body>
+</html>
